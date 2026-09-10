@@ -14,11 +14,14 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
+import subprocess
+import sys
 import time
 import atexit
 from datetime import datetime
 from collections import deque
 import time as _time
+from pathlib import Path
 
 from src.config import get_config
 from src.logger import setup_logger
@@ -236,6 +239,12 @@ def main():
         st.session_state.page = page
     page = st.session_state.page
 
+    # ── Floating widget launcher ───────────────────────────────────────────
+    if st.sidebar.button("🧠 Launch Floating Widget", use_container_width=True):
+        widget_path = str(Path(__file__).resolve().parent / "floating_widget.py")
+        subprocess.Popen([sys.executable, widget_path],
+                         creationflags=subprocess.CREATE_NEW_CONSOLE
+                         if sys.platform == "win32" else 0)
     render_header(
         session_start=st.session_state.session_start,
         prediction_count=st.session_state.prediction_count,
