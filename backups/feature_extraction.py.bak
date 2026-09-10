@@ -1,0 +1,208 @@
+"""
+feature_extraction.py (Production Version)
+-------------------------------------------
+Extract behavioral features from raw keyboard and mouse data.
+Features must match the training dataset format.
+Optimized for performance and error handling.
+"""
+
+import numpy as np
+import logging
+from src.logger import setup_logger
+
+logger = setup_logger(__name__)
+
+
+# Feature order - MUST match training dataset
+FEATURE_ORDER = [
+    'key_press_count',
+    'key_hold_time',
+    'typing_speed',
+    'error_rate',
+    'backspace_count',
+    'idle_time',
+    'mouse_click_count',
+    'left_click',
+    'right_click',
+    'double_click',
+    'scroll_count',
+    'cursor_speed',
+    'cursor_distance',
+    'drag_count',
+    'movement_speed',
+    'idle_mouse_time'
+]
+
+
+class FeatureExtractor:
+    """Extract ML features from raw activity data with optimized algorithms."""
+
+    @staticmethod
+    def extract_keyboard_features(raw_data, window_size=60):
+        """
+        Extract keyboard features with O(n) performance.
+
+        Args:
+            raw_data: Raw keyboard/mouse data from monitor
+            window_size: Time window in seconds
+
+        Returns:
+            dict: Keyboard features
+        """
+        try:
+            key_presses = raw_data.get('key_presses', [])
+            key_releases = raw_data.get('key_releases', [])
+            backspace_count = raw_data.get('backspace_count', 0)
+            keyboard_idle = raw_data.get('keyboard_idle', 0)
+
+            # Key press count
+            key_press_count = len(key_presses)
+
+            # Key hold time - optimized O(n) algorithm
+            key_hold_time = 0.0
+            if key_presses and key_releases:
+                # Pair presses with releases more efficiently
+                hold_durations = []
+                release_idx = 0
+                
+                for press_time in key_presses:
+                    # Find next release after this press
+                    while release_idx < len(key_releases) and key_releases[release_idx] < press_time:
+                        release_idx += 1
+                    
+                    if release_idx < len(key_releases):
+                        hold_durations.append(key_releases[release_idx] - press_time)
+
+                if hold_durations:
+                    key_hold_time = np.mean(hold_durations)
+
+            # Typing speed (WPM - approximate from key presses)
+            # Assuming average word is 5 characters
+            typing_speed = 0.0
+            if window_size > 0:
+                typing_speed = (key_press_count / 5.0) / (window_size / 60.0)
+
+            # Error rate (backspace as proxy for errors)
+            error_rate = backspace_count / max(key_press_count, 1)
+
+            return {
+                'key_press_count': float(key_press_count),
+                'key_hold_time': float(key_hold_time),
+                'typing_speed': float(typing_speed),
+                'error_rate': float(error_rate),
+                'backspace_count': float(backspace_count),
+                'idle_time': float(keyboard_idle)
+            }
+        except Exception as e:
+            logger.error(f"Error extracting keyboard features: {e}")
+            return {
+                'key_press_count': 0.0,
+                'key_hold_time': 0.0,
+                'typing_speed': 0.0,
+                'error_rate': 0.0,
+                'backspace_count': 0.0,
+                'idle_time': 0.0
+            }
+
+    @staticmethod
+    def extract_mouse_features(raw_data):
+        """
+        Extract mouse features with error handling.
+
+        Args:
+            raw_data: Raw keyboard/mouse data from monitor
+
+        Returns:
+            dict: Mouse features
+        """
+        try:
+            mouse_clicks = raw_data.get('mouse_clicks', {})
+            scroll_count = raw_data.get('scroll_count', 0)
+            mouse_movements = raw_data.get('mouse_movements', [])
+            mouse_idle = raw_data.get('mouse_idle', 0)
+
+            # Click counts
+            left_click = mouse_clicks.get('left', 0)
+            right_click = mouse_clicks.get('right', 0)
+            double_click = mouse_clicks.get('double', 0)
+            mouse_click_count = left_click + right_click + double_click
+
+            # Movement metrics
+            total_distance = sum(m.get('distance', 0) for m in mouse_movements)
+            drag_count = 0  # Simplified - would need click+drag detection
+
+            # Cursor speed (pixels per second)
+            cursor_speed = 0.0
+            movement_speed = 0.0
+            
+            if mouse_movements:
+                total_time = sum(m.get('time_diff', 0) for m in mouse_movements)
+                if total_time > 0:
+                    cursor_speed = total_distance / total_time
+                    movement_speed = cursor_speed
+
+            return {
+                'mouse_click_count': float(mouse_click_count),
+                'left_click': float(left_click),
+                'right_click': float(right_click),
+                'double_click': float(double_click),
+                'scroll_count': float(scroll_count),
+                'cursor_speed': float(cursor_speed),
+                'cursor_distance': float(total_distance),
+                'drag_count': float(drag_count),
+                'movement_speed': float(movement_speed),
+                'idle_mouse_time': float(mouse_idle)
+            }
+        except Exception as e:
+            logger.error(f"Error extracting mouse features: {e}")
+            return {
+                'mouse_click_count': 0.0,
+                'left_click': 0.0,
+                'right_click': 0.0,
+                'double_click': 0.0,
+                'scroll_count': 0.0,
+                'cursor_speed': 0.0,
+                'cursor_distance': 0.0,
+                'drag_count': 0.0,
+                'movement_speed': 0.0,
+                'idle_mouse_time': 0.0
+            }
+
+    @staticmethod
+    def extract_features(raw_data, window_size=60):
+        """
+        Extract all features in correct order with validation.
+
+        Args:
+            raw_data: Raw data from ActivityMonitor.get_raw_data()
+            window_size: Time window in seconds
+
+        Returns:
+            tuple: (all_features dict, feature_vector list)
+        """
+        try:
+            keyboard_features = FeatureExtractor.extract_keyboard_features(raw_data, window_size)
+            mouse_features = FeatureExtractor.extract_mouse_features(raw_data)
+
+            # Combine all features
+            all_features = {**keyboard_features, **mouse_features}
+
+            # Create feature vector in correct order
+            feature_vector = [all_features[name] for name in FEATURE_ORDER]
+
+            # Validate feature vector
+            if len(feature_vector) != len(FEATURE_ORDER):
+                logger.error(f"Feature vector size mismatch: {len(feature_vector)} vs {len(FEATURE_ORDER)}")
+                raise ValueError("Feature vector size does not match expected size")
+
+            return all_features, feature_vector
+        except Exception as e:
+            logger.error(f"Error extracting features: {e}")
+            # Return default features on error
+            default_features = {name: 0.0 for name in FEATURE_ORDER}
+            return default_features, [0.0] * len(FEATURE_ORDER)
+
+    @staticmethod
+    def get_feature_names():
+        """Get feature names in correct order."""
+        return FEATURE_ORDER

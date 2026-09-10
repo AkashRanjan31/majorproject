@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI-Based Mental Health Fatigue Detection</title>
+  <meta name="description" content="Predict cognitive fatigue using keyboard and mouse interaction behaviour using Machine Learning." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+
+  <!-- ============ BACKGROUND EFFECTS ============ -->
+  <div class="grid-overlay"></div>
+  <div class="aurora-glow"></div>
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+  <div class="spotlight"></div>
+  <canvas id="particles-canvas"></canvas>
+  <div class="sparkles-container"></div>
+
+  <!-- ============ NAVBAR ============ -->
+  <nav class="navbar" role="navigation" aria-label="Main navigation">
+    <a href="#" class="navbar-brand">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="16" cy="16" r="14" stroke="url(#navGrad)" stroke-width="1.5" fill="rgba(99,102,241,0.08)" />
+        <path d="M12 20C12 17.5 14 16 16 16C18 16 20 17.5 20 20" stroke="url(#navGrad)" stroke-width="1.5" stroke-linecap="round" fill="none" />
+        <circle cx="13" cy="13" r="2" fill="#6366F1" />
+        <circle cx="19" cy="13" r="2" fill="#8B5CF6" />
+        <circle cx="16" cy="20" r="3" fill="#06B6D4" opacity="0.6" />
+        <defs>
+          <linearGradient id="navGrad" x1="0" y1="0" x2="32" y2="32">
+            <stop offset="0%" stop-color="#6366F1" />
+            <stop offset="100%" stop-color="#06B6D4" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <span>AI Fatigue Detection</span>
+    </a>
+
+    <button id="navToggle" class="nav-toggle" aria-label="Toggle navigation menu">
+      <span></span>
+    </button>
+
+    <ul id="navLinks" class="navbar-links">
+      <li><a href="#" class="active">Home</a></li>
+      <li><a href="#">About</a></li>
+      <li><a href="#">How it Works</a></li>
+      <li><a href="#">GitHub</a></li>
+    </ul>
+
+    <div class="navbar-actions">
+      <button id="themeToggle" class="theme-toggle" aria-label="Toggle dark mode">
+        <i>&#x1F319;</i>
+      </button>
+      <div style="position:relative;">
+        <div id="userAvatar" class="avatar" role="button" tabindex="0" aria-haspopup="true" aria-label="User profile">
+          U
+        </div>
+        <div id="profileDropdown" class="profile-dropdown" role="menu">
+          <a href="#" class="profile-dropdown-item" role="menuitem">&#x1F464; Profile</a>
+          <a href="#" class="profile-dropdown-item" role="menuitem">&#x2699;&#xFE0F; Settings</a>
+          <a href="#" class="profile-dropdown-item" role="menuitem">&#x1F4A1; Help</a>
+          <hr style="border: none; border-top: 1px solid rgba(99,102,241,0.1); margin: 4px 0;" />
+          <a href="#" class="profile-dropdown-item" role="menuitem">&#x1F6AA; Sign Out</a>
+        </div>
+    </div>
+  </nav>
+
+  <!-- ============ MAIN CONTENT ============ -->
+  <main class="main-content">
+
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="hero-badge">
+        &#x2728; AI Powered Insight
+      </div>
+      <h1>
+        AI-Based Mental Health<br />
+        <span class="gradient-text">Fatigue Detection</span>
+      </h1>
+      <p class="hero-subtitle">
+        Predict cognitive fatigue using keyboard and mouse interaction behaviour using Machine Learning.
+      </p>
+      <div class="hero-actions">
+        <button id="fillSampleData" class="btn btn-secondary">
+          &#x1F4C2; Fill Sample Data
+        </button>
+        <button id="resetData" class="btn btn-secondary">
+          &#x1F504; Reset All
+        </button>
+      </div>
+    </section>
+
+    <!-- ===== MONITORING CONTROL BAR ===== -->
+    <div class="monitor-controls fade-in-up" id="monitorControls">
+      <button id="monitorStartBtn" class="monitor-btn monitor-btn-start">
+        &#x25B6; Start Monitoring
+      </button>
+      <button id="monitorStopBtn" class="monitor-btn monitor-btn-stop" style="display:none;">
+        &#x25A0; Stop Monitoring
+      </button>
+      <div class="monitor-status">
+        <span class="status-dot inactive" id="statusDot"></span>
+        <span class="status-text" id="statusText">Ready</span>
+      </div>
+      <div class="monitor-stats">
+        <span class="monitor-stat-item">
+          &#x23F1;&#xFE0F; <strong id="sessionTimer">00:00</strong> 
+        </span>
+        <span class="monitor-stat-item">
+          &#x2328;&#xFE0F; Keys: <strong id="keyCount">0</strong>
+        </span>
+        <span class="monitor-stat-item">
+          &#x1F5B1;&#xFE0F; Mouse: <strong id="mouseCount">0</strong>
+        </span>
+      </div>
+
+    <!-- Dashboard Grid -->
+    <div class="dashboard-grid">
+
+      <!-- LEFT: Keyboard Features -->
+      <div class="glass-card fade-in-up">
+        <div class="feature-card-header">
+          <div class="icon">&#x2328;&#xFE0F;</div>
+          <h2>Keyboard Features</h2>
+          <span class="monitoring-badge" id="kbBadge" style="display:none; margin-left: auto;">&#x25CF; Live</span>
+        </div>
+        <div class="feature-items" id="keyboardFeatures">
+          <!-- Key Press Count -->
+          <div class="feature-item">
+            <div class="feature-info">
+              <div class="feature-icon">&#x1F5B1;</div>
+              <div>
+                <div class="feature-label">Key Press Count</div>
+                <span class="feature-desc">Total key presses recorded</span>
+              </div>
+            <div class="feature-controls">
+              <div class="slider-container">
+                <input type="range" class="feature-slider" data-feature="key_press_count" data-min="0" data-max="500" data-step="1" value="60" aria-label="Key Press Count" />
+              </div>
+              <div class="feature-value">
+                <input type="number" class="feature-input" data-feature="key_press_count" min="0" max="500" step="1" value="60" />
+                <div class="feature-unit">count</div>
+            </div>
+
+          <!-- Key Hold Time -->
+          <div class="feature-item">
+            <div class="feature-info">
+              <div class="feature-icon">&#x23F1;&#xFE0F;</div>
+              <div>
+                <div class="feature-label">Key Hold Time</div>
+                <span class="feature-desc">Average key press duration</span>
+              </div>
+            <div class="feature-controls">
+              <div class="slider-container">
+                <input type="range" class="feature-slider" data-feature="key_hold_time" data-min="0" data-max="1" data-step="0.01" value="0.15" aria-label="Key Hold Time" />
+              </div>
+              <div class="feature-value">
+                <input type="number" class="feature-input" data-feature="key_hold_time" min="0" max="1" step="0.01" value="0.15" />
+                <div class="feature-unit">sec</div>
+            </div>
+
+          <!-- Typing Speed -->
+          <div class="feature-item">
+            <div class="feature-info">
+              <div class="feature-icon">&#x26A1;</div>
+              <div>
+                <div class="feature-label">Typing Speed</div>
+                <span class="feature-desc">Words per minute</span>
+              </div>
+            <div class="feature-controls">
+              <div class="slider-container">
+                <input type="range" class="feature-slider" data-feature="typing_speed" data-min="0" data-max="120" data-step="1" value="30" aria-label="Typing Speed" />
+              </div>
+              <div class="feature-value">
+                <input type="number" class="feature-input" data-feature="typing_speed" min="0" max="120" step="1" value="30" />
+                <div class="feature-unit">WPM</div>
+            </div>
+
+          <!-- Error Rate -->
+          <div class="feature-item">
+            <div class="feature-info">
+              <div class="feature-icon">&#x274C;</div>
+              <div>
+                <div class="feature-label">Error Rate</div>
+                <span class="feature-desc">Typing error percentage</span>
+              </div>
+            <div class="feature-controls">
+              <div class="slider-container">
+                <input type="range" class="feature-slider" data-feature="error_rate" data-min="0" data-max="1" data-step="0.01" value="0.05" aria-label="Error Rate" />
+              </div>
+              <div class="feature-value">
+                <input type="number" class="feature-input" data-feature="error_rate" min="0" max="1" step="0.01" value="0.05" />
+                <div class="feature-unit">%</div>
+            </div>
+
+          <!-- Backspace Count -->
+          <div class="feature-item">
+            <div class="feature-info">
+              <div class="feature-icon">&#x2190;&#xFE0F;</div>
+              <div>
+                <div class="feature-label">Backspace Count</div>
+                <span class="feature-desc">Number of corrections</span>
+              </div>
+            <div class="feature-controls">
+              <div class="slider-container">
+                <input type="range" class="feature-slider" data-feature="backspace_count" data-min="0" data-max="100" data-step="1" value="8" aria-label="Backspace Count" />
+              </div>
+              <div class="feature-value">
+                <input type="number" class="feature-input" data-feature="backspace_count" min="0" max="100" step="1" value="8" />
+                <div class="feature-unit">count</div>
+            </div>
+
+          <!-- Idle Time -->
+          <div class="feature-item">
+            <div class="feature-info">
+              <div class="feature-icon">&#x23F8;&#xFE0F;</div>
+              <div>
+                <div class="feature-label">Idle Time</div>
+                <span class="feature-desc">Periods of inactivity</span>
+              </div>
+            <div class="feature-controls">
+              <div class="slider-container">
+                <input type="range" class="feature-slider" data-feature="idle_time" data-min="0" data-max="60" data-step="0.1" value="5" aria-label="Idle Time" />
+              </div>
+              <div class="feature-value">
+                <input type="number" class="feature-input" data-feature="idle_time" min="0" max="60" step="0.1" value="5" />
+                <div class="feature-unit">sec</div>
+            </div>
+        </div>
+
+      <!-- RIGHT: Mouse Features -->
+      <div class="glass-card fade-in-up">
+        <div class="feature-card-header">
+          <div class="icon">&#x1F5B1;&#xFE0F;</div>
+          <h2>Mouse Features</h2>
+          <span class="monitoring-badge" id="mouseBadge" style="display:none; margin-left: auto;">&#x25CF; Live</span>
+        </div>
+        <div class="feature-items" id="mouseFeatures">
+          <!-- Mouse Click Count -->
+          <div class="feature-item">
+            <div class="feature-info">
+              <div class="feature-icon">&#x1F5B1;</div>
+              <div>
+                <div class="feature-label">Mouse Click Count</div>
+                <span class="feature-desc">Total clicks recorded</span>
+              </div>
+            <div class="feature-controls">
+              <div class="slider-container">
+                <input type="range" class="feature-slider" data-feature="mouse_click_count" data-min="0" data-max="200" data-step="1" value="15" aria-label="Mouse Click Count" />
+              </div>
+              <div class="feature-value">
+                <input type="number" class="feature-input" data-feature="mouse_click_count" min="0" max="200" step="1" value="15" />
+                <div class="feature-unit">count</div>
+            </div>
+
+          <!-- Left Click -->
+          <div class="feature-item">
+            <div class="feature-info">
+              <div class="feature-icon">&#x1F446;</div>
+              <div>
+                <div class="feature-label">Left Click</div>
+                <span class="feature-desc">Left button clicks</span>
+              </div>
+            <div class="feature-controls">
+              <div class="slider-container">
+                <input type="range" class="feature-slider" data-feature="left_click" data-min="0" data-max="150" data-step="1" value="12" aria-label="Left Click" />
+              </div>
+              <div class="feature-value">
+                <input type="number" class="feature-input" data-feature="left_click" min="0" max="150" step="1" value="12" />
+                <div class="feature-unit">count</div>
+            </div>
+
+          <!-- Right Click -->
+          <div class="feature-item">
+            <div class="feature-info">
+              <div class="feature-icon">&#x1F447;</div>
+              <div>
+                <div class="feature-label">Right Click</div>
+                <span class="feature-desc">Right button clicks</span>
+              </div>
+            <div class="feature-controls">
+              <div class="slider-container">
+                <input type="range" class="feature-slider" data-feature="right_click" data-min="0" data-max="50" data-step="1" value="2" aria-label="Right Click" />
+              </div>
+              <div class="feature-value">
+                <input type="number" class="feature-input" data-feature="right_click" min="0" max="50" step="1" value="2" />
+                <div class="feature-unit">count</div>
+            </div>
+
+          <!-- Double Click -->
+          <div class="feature-item">
+            <div class="feature-info">
+              <div class="feature-icon">&#x1F447;&#x1F447;</div>
+              <div>
+                <div class="feature-label">Double Click</div>
+                <span class="feature-desc">Double-click events</span>
+              </div>
+            <div class="feature-controls">
+              <div class="slider-container">
+                <input type="range" class="feature-slider" data-feature="double_click" data-min="0" data-max="30" data-step="1" value="0" aria-label="Double Click" />
+              </div>
+              <div class="feature-value">
+                <input type="number" class="feature-input" data-feature="double_click" min="0" max="30" step="1" value="0" />
+                <div class="feature-unit">count</div>
+            </div>
+
+          <!-- Cursor Speed -->
+          <div class="feature-item">
+            <div class="feature-info">
+              <div class="feature-icon">&#x1F4A8;</div>
+              <div>
+                <div class="feature-label">Cursor Speed</div>
+                <span class="feature-desc">Pointer velocity</span>
+              </div>
+            <div class="feature-controls">
+              <div class="slider-container">
+                <input type="range" class="feature-slider" data-feature="cursor_speed" data-min="0" data-max="500" data-step="1" value="60" aria-label="Cursor Speed" />
+              </div>
+              <div class="feature-value">
+                <input type="number" class="feature-input" data-feature="cursor_speed" min="0" max="500" step="1" value="60" />
+                <div class="feature-unit">px/s</div>
+            </div>
+
+          <!-- Cursor Distance -->
+          <div class="feature-item">
+            <div class="feature-info">
+              <div class="feature-icon">&#x1F4CD;</div>
+              <div>
+                <div class="feature-label">Cursor Distance</div>
+                <span class="feature-desc">Total pointer travel</span>
+              </div>
+            <div class="feature-controls">
+              <div class="slider-container">
+                <input type="range" class="feature-slider" data-feature="cursor_distance" data-min="0" data-max="100000" data-step="100" value="20000" aria-label="Cursor Distance" />
+              </div>
+              <div class="feature-value">
+                <input type="number" class="feature-input" data-feature="cursor_distance" min="0" max="100000" step="100" value="20000" />
+                <div class="feature-unit">px</div>
+            </div>
+
+          <!-- Drag Count -->
+          <div class="feature-item">
+            <div class="feature-info">
+              <div class="feature-icon">&#x1F5B1;</div>
+              <div>
+                <div class="feature-label">Drag Count</div>
+                <span class="feature-desc">Drag operations</span>
+              </div>
+            <div class="feature-controls">
+              <div class="slider-container">
+                <input type="range" class="feature-slider" data-feature="drag_count" data-min="0" data-max="50" data-step="1" value="5" aria-label="Drag Count" />
+              </div>
+              <div class="feature-value">
+                <input type="number" class="feature-input" data-feature="drag_count" min="0" max="50" step="1" value="5" />
+                <div class="feature-unit">count</div>
+            </div>
+
+          <!-- Movement Speed -->
+          <div class="feature-item">
+            <div class="feature-info">
+              <div class="feature-icon">&#x1F3C3;</div>
+              <div>
+                <div class="feature-label">Movement Speed</div>
+                <span class="feature-desc">Mouse movement velocity</span>
+              </div>
+            <div class="feature-controls">
+              <div class="slider-container">
+                <input type="range" class="feature-slider" data-feature="movement_speed" data-min="0" data-max="500" data-step="1" value="60" aria-label="Movement Speed" />
+              </div>
+              <div class="feature-value">
+                <input type="number" class="feature-input" data-feature="movement_speed" min="0" max="500" step="1" value="60" />
+                <div class="feature-unit">px/s</div>
+            </div>
+
+          <!-- Idle Mouse Time -->
+          <div class="feature-item">
+            <div class="feature-info">
+              <div class="feature-icon">&#x1F634;</div>
+              <div>
+                <div class="feature-label">Idle Mouse Time</div>
+                <span class="feature-desc">Mouse inactivity period</span>
+              </div>
+            <div class="feature-controls">
+              <div class="slider-container">
+                <input type="range" class="feature-slider" data-feature="idle_mouse_time" data-min="0" data-max="2000" data-step="10" value="300" aria-label="Idle Mouse Time" />
+              </div>
+              <div class="feature-value">
+                <input type="number" class="feature-input" data-feature="idle_mouse_time" min="0" max="2000" step="10" value="300" />
+                <div class="feature-unit">ms</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Predict Button -->
+    <div class="predict-btn-wrapper fade-in-up">
+      <button id="predictBtn" class="predict-btn">
+        &#x2728; Predict Fatigue
+      </button>
+    </div>
+
+    <!-- Prediction Result -->
+    <div id="predictionResult" class="prediction-result"></div>
+
+    <!-- ===== SESSION REPORT SECTION ===== -->
+    <div id="sessionReport" class="session-report">
+      <div class="glass-card">
+        <div class="report-header">
+          <h2>&#x1F4CA; Session Report</h2>
+          <div class="report-actions">
+            <button class="btn-export" id="exportJsonBtn">&#x1F4E4; Export JSON</button>
+            <button class="btn-export" id="exportCsvBtn">&#x1F4E4; Export CSV</button>
+          </div>
+
+        <!-- Report Stats Grid -->
+        <div class="report-stats-grid" id="reportStatsGrid">
+          <div class="report-stat-card">
+            <div class="report-stat-label">Session Duration</div>
+            <div class="report-stat-value" id="reportDuration">0s</div>
+          <div class="report-stat-card">
+            <div class="report-stat-label">Total Predictions</div>
+            <div class="report-stat-value" id="reportPredictions">0</div>
+          <div class="report-stat-card">
+            <div class="report-stat-label">Dominant Prediction</div>
+            <div class="report-stat-value" id="reportDominant">-</div>
+          <div class="report-stat-card">
+            <div class="report-stat-label">Total Key Presses</div>
+            <div class="report-stat-value" id="reportKeys">0</div>
+          <div class="report-stat-card">
+            <div class="report-stat-label">Mouse Clicks</div>
+            <div class="report-stat-value" id="reportClicks">0</div>
+          <div class="report-stat-card">
+            <div class="report-stat-label">Avg Typing Speed</div>
+            <div class="report-stat-value" id="reportTyping">0 WPM</div>
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="report-grid">
+          <div>
+            <h4 style="margin-bottom: 12px; color: var(--text-secondary);">Fatigue Trend Over Time</h4>
+            <div class="chart-container">
+              <canvas id="trendChart"></canvas>
+            </div>
+          <div style="text-align: center;">
+            <h4 style="margin-bottom: 12px; color: var(--text-secondary);">Confidence Score</h4>
+            <div class="gauge-container">
+              <canvas id="confidenceGauge"></canvas>
+            </div>
+        </div>
+
+        <!-- Recommendation -->
+        <div class="glass-card" style="margin-top: 20px; padding: 20px;">
+          <h4 style="margin-bottom: 8px;">&#x1F4A1; Session Recommendation</h4>
+          <p id="reportRecommendation" style="color: var(--text-muted); line-height: 1.6;">Complete a monitoring session to get a recommendation.</p>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-grid">
+      <div class="glass-card summary-card fade-in-up">
+        <div class="summary-icon">&#x2328;&#xFE0F;</div>
+        <div class="summary-value"><span class="count-up" id="summaryTyping">30</span> <small style="font-size:1rem;font-weight:500;color:var(--text-muted);">WPM</small></div>
+        <div class="summary-label">Typing Speed</div>
+
+      <div class="glass-card summary-card fade-in-up">
+        <div class="summary-icon">&#x1F5B1;&#xFE0F;</div>
+        <div class="summary-value"><span class="count-up" id="summaryClicks">15</span> <small style="font-size:1rem;font-weight:500;color:var(--text-muted);">Total</small></div>
+        <div class="summary-label">Mouse Clicks</div>
+
+      <div class="glass-card summary-card fade-in-up">
+        <div class="summary-icon">&#x26A1;</div>
+        <div class="summary-value" id="summaryActivity">Normal</div>
+        <div class="summary-label">Activity Level</div>
+
+      <div class="glass-card summary-card fade-in-up">
+        <div class="summary-icon">&#x1F9E0;</div>
+        <div class="summary-value" id="summaryFatigue">Low</div>
+        <div class="summary-label">Fatigue Level</div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>&copy; 2026 AI-Based Mental Health Fatigue Detection</p>
+      <div class="footer-links">
+        <a href="#" aria-label="GitHub">GitHub</a>
+        <a href="#" aria-label="Twitter">Twitter</a>
+        <a href="#" aria-label="LinkedIn">LinkedIn</a>
+        <button id="backToTop" class="back-to-top" aria-label="Back to top">&#x2191;</button>
+      </div>
+    </footer>
+
+  </main>
+
+  <script src="/static/js/chart.js"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

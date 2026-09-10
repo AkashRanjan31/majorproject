@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+notebooks/.ipynb_checkpoints/
+
+# Model binaries (large files)
+models/*.pkl
+backup_pre_audit/*.pkl
+backups/*.pkl
+
+# Large dataset raw files (too large for GitHub)
+dataset/Data/user 1/mousedata.tsv
+dataset/Data/user 2/mousedata.tsv
+dataset/Data/user 1/mouse_mov_speeds.tsv
+dataset/Data/user 2/mouse_mov_speeds.tsv
+
+# Archive/zip
+*.zip
+
+# Logs
+logs/
+
+# Database
+database/fatigue_data.db
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# CatBoost artifacts
+catboost_info/
+
+# History
+history/
+
+# Build version file
+2.7.0
