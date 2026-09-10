@@ -706,10 +706,16 @@ def render_sidebar() -> str:
         import subprocess, sys
         from pathlib import Path
         widget_path = str(Path(__file__).resolve().parents[1] / "floating_widget.py")
-        subprocess.Popen(
-            [sys.executable, widget_path],
-            creationflags=subprocess.CREATE_NEW_CONSOLE if sys.platform == "win32" else 0,
-        )
+        # Singleton guard: only spawn if no widget process is alive
+        existing = st.session_state.get("_widget_proc")
+        if existing is None or existing.poll() is not None:
+            st.session_state["_widget_proc"] = subprocess.Popen(
+                [sys.executable, widget_path],
+                creationflags=subprocess.CREATE_NEW_CONSOLE if sys.platform == "win32" else 0,
+            )
+        # Reset bridge so repeated reruns don't re-trigger
+        st.session_state["_ns_widget_bridge"] = ""
+        st.session_state["_ns_widget_last"] = ""
 
     # ── inject CSS into parent document ──────────────────────────────────────
     # st.markdown allows <style> tags — this is the correct injection path

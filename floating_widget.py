@@ -196,7 +196,7 @@ class FloatingWidget:
 
         self.exp_level = tk.Label(
             score_frame, text="LOADING", font=("Segoe UI", 10, "bold"),
-            bg=BG_EXPANDED, fg=TEXT_MUTED, letter_spacing=2,
+            bg=BG_EXPANDED, fg=TEXT_MUTED,
         )
         self.exp_level.pack()
 
@@ -372,4 +372,26 @@ class FloatingWidget:
 
 # ── Entry point ───────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    FloatingWidget().run()
+    import tempfile, os
+    # Singleton lock: exit immediately if another instance is already running
+    LOCK_FILE = Path(tempfile.gettempdir()) / "neurosense" / "widget.lock"
+    LOCK_FILE.parent.mkdir(parents=True, exist_ok=True)
+    if LOCK_FILE.exists():
+        try:
+            pid = int(LOCK_FILE.read_text().strip())
+            # Check if that PID is still alive
+            import ctypes
+            handle = ctypes.windll.kernel32.OpenProcess(0x100000, False, pid)
+            if handle:
+                ctypes.windll.kernel32.CloseHandle(handle)
+                sys.exit(0)  # already running, do nothing
+        except Exception:
+            pass  # stale lock, proceed
+    LOCK_FILE.write_text(str(os.getpid()))
+    try:
+        FloatingWidget().run()
+    finally:
+        try:
+            LOCK_FILE.unlink(missing_ok=True)
+        except Exception:
+            pass
