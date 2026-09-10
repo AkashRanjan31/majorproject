@@ -240,11 +240,9 @@ def main():
     page = st.session_state.page
 
     # ── Floating widget launcher ───────────────────────────────────────────
-    if st.sidebar.button("🧠 Launch Floating Widget", use_container_width=True):
-        widget_path = str(Path(__file__).resolve().parent / "floating_widget.py")
-        subprocess.Popen([sys.executable, widget_path],
-                         creationflags=subprocess.CREATE_NEW_CONSOLE
-                         if sys.platform == "win32" else 0)
+    if "_widget_proc" not in st.session_state:
+        st.session_state._widget_proc = None
+
     render_header(
         session_start=st.session_state.session_start,
         prediction_count=st.session_state.prediction_count,

@@ -493,6 +493,17 @@ def _build_sidebar_html(current_page: str, collapsed: bool) -> str:
     <div class="ns-footer-row">NeuroSense AI v2.0</div>
     <div class="ns-footer-row">Powered by XGBoost</div>
     <div class="ns-footer-row">Local AI · SQLite</div>
+    <div style="margin-top:.6rem">
+      <button onclick="nsLaunchWidget()" style="
+        width:100%;padding:.42rem .6rem;border-radius:9px;
+        background:linear-gradient(135deg,#1d4ed8,#6d28d9);
+        color:#fff;font-size:.72rem;font-weight:700;
+        border:none;cursor:pointer;letter-spacing:.03em;
+        transition:opacity .15s;
+      " onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">
+        🧠 Floating Widget
+      </button>
+    </div>
   </div>
 </div>
 <div id="ns-toggle" onclick="nsToggle()" title="Toggle sidebar">{toggle_icon}</div>
@@ -507,14 +518,12 @@ def _build_injector_js(current_page: str, collapsed: bool) -> str:
     then sets up all event handlers on the parent document.
     """
     sidebar_html = _build_sidebar_html(current_page, collapsed)
-    # Escape for embedding inside a JS template literal
     sidebar_html_escaped = (
         sidebar_html
         .replace("\\", "\\\\")
         .replace("`", "\\`")
         .replace("${", "\\${")
     )
-
     collapsed_js = "true" if collapsed else "false"
 
     return f"""
@@ -527,28 +536,19 @@ def _build_injector_js(current_page: str, collapsed: bool) -> str:
   var P = window.parent;
   var D = P.document;
 
-  // ── 1. Remove any stale sidebar from a previous rerun ──────────────────
   ['ns-sidebar','ns-toggle','ns-overlay'].forEach(function(id) {{
     var el = D.getElementById(id);
     if (el) el.remove();
   }});
 
-  // ── 2. Inject sidebar HTML into parent <body> ───────────────────────────
   var tmp = D.createElement('div');
   tmp.innerHTML = `{sidebar_html_escaped}`;
   while (tmp.firstChild) D.body.appendChild(tmp.firstChild);
 
-  // ── 3. Sync body class for CSS margin transition ────────────────────────
   var isCollapsed = {collapsed_js};
-  if (isCollapsed) {{
-    D.body.classList.add('ns-collapsed');
-  }} else {{
-    D.body.classList.remove('ns-collapsed');
-  }}
+  if (isCollapsed) D.body.classList.add('ns-collapsed');
+  else D.body.classList.remove('ns-collapsed');
 
-  // ── 4. Shared helpers ────────────────────────────────────────────────────
-  // Find a bridge input by aria-label — reliable regardless of
-  // label_visibility mode (Streamlit always sets aria-label to the label string).
   function findBridgeInput(ariaLabel) {{
     var inputs = D.querySelectorAll('input[type="text"]');
     for (var i = 0; i < inputs.length; i++) {{
@@ -557,45 +557,29 @@ def _build_injector_js(current_page: str, collapsed: bool) -> str:
     return null;
   }}
 
-  // Write a value into a React-controlled input and fire the events
-  // Streamlit needs to detect the change and trigger a rerun.
   function writeToInput(inp, value) {{
-    var nativeSetter = Object.getOwnPropertyDescriptor(
-      P.HTMLInputElement.prototype, 'value'
-    ).set;
+    var nativeSetter = Object.getOwnPropertyDescriptor(P.HTMLInputElement.prototype, 'value').set;
     nativeSetter.call(inp, value);
     inp.dispatchEvent(new P.Event('input', {{bubbles: true}}));
-    inp.dispatchEvent(new P.KeyboardEvent('keydown', {{
-      key: 'Enter', code: 'Enter', keyCode: 13, bubbles: true
-    }}));
+    inp.dispatchEvent(new P.KeyboardEvent('keydown', {{key:'Enter',code:'Enter',keyCode:13,bubbles:true}}));
   }}
 
-  // Retry writing to a bridge input up to maxTries times.
-  // Stops as soon as the input is found — no infinite loop.
   function writeToBridge(ariaLabel, value, maxTries) {{
     maxTries = maxTries || 8;
     var inp = findBridgeInput(ariaLabel);
     if (inp) {{ writeToInput(inp, value); return; }}
-    if (maxTries > 0) {{
-      setTimeout(function() {{ writeToBridge(ariaLabel, value, maxTries - 1); }}, 100);
-    }}
+    if (maxTries > 0) setTimeout(function() {{ writeToBridge(ariaLabel, value, maxTries - 1); }}, 100);
   }}
 
-  // ── 5. Navigation handler ────────────────────────────────────────────────
   P.nsNav = function(page) {{
-    // Immediate visual feedback — update active class without waiting for rerun
     D.querySelectorAll('.ns-item').forEach(function(el) {{
       el.classList.remove('ns-active');
-      if (el.getAttribute('onclick') === "nsNav('" + page + "')") {{
-        el.classList.add('ns-active');
-      }}
+      if (el.getAttribute('onclick') === "nsNav('" + page + "')") el.classList.add('ns-active');
     }});
     if (P.innerWidth <= 768) P.nsMobileClose();
-    // Signal Python: write page name into the nav bridge input
     writeToBridge('ns_page_input', page);
   }};
 
-  // ── 6. Toggle handler ────────────────────────────────────────────────────
   P.nsToggle = function() {{
     var sb = D.getElementById('ns-sidebar');
     var btn = D.getElementById('ns-toggle');
@@ -605,28 +589,26 @@ def _build_injector_js(current_page: str, collapsed: bool) -> str:
     if (btn) btn.innerHTML = nowCollapsed
       ? '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:block"><polyline points="9 18 15 12 9 6"/></svg>'
       : '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:block"><polyline points="15 18 9 12 15 6"/></svg>';
-    // Signal Python: write collapse state into the collapse bridge input
     writeToBridge('ns_collapse_input', nowCollapsed ? '__collapsed__' : '__expanded__');
   }};
 
-  // ── 7. Mobile helpers ───────────────────────────────────────────────────
   P.nsMobileClose = function() {{
     var sb = D.getElementById('ns-sidebar');
     if (sb) sb.classList.remove('ns-mobile-open');
     D.body.classList.remove('ns-mobile-open');
   }};
 
-  // ── 8. Hide Streamlit widget chrome ────────────────────────────────────
-  // The st.text_input we use as a bridge should be invisible.
+  P.nsLaunchWidget = function() {{
+    writeToBridge('ns_widget_input', '__launch__');
+  }};
+
   function hideWidgets() {{
-    ['ns_page_input', 'ns_collapse_input'].forEach(function(ariaLabel) {{
+    ['ns_page_input', 'ns_collapse_input', 'ns_widget_input'].forEach(function(ariaLabel) {{
       var inp = findBridgeInput(ariaLabel);
       if (!inp) return;
       var container = inp.closest('[data-testid="stTextInput"]');
       if (container) {{
-        container.style.cssText = 'position:absolute;width:1px;height:1px;' +
-                                  'overflow:hidden;opacity:0;pointer-events:none;' +
-                                  'top:-9999px;left:-9999px;';
+        container.style.cssText = 'position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;top:-9999px;left:-9999px;';
       }}
     }});
   }}
@@ -675,7 +657,7 @@ def render_sidebar() -> str:
         label_visibility="hidden",
     )
 
-    # Collapse bridge — initialise to neutral value; JS writes the signal
+    # Collapse bridge
     if "_ns_collapse_bridge" not in st.session_state:
         st.session_state["_ns_collapse_bridge"] = ""
     collapse_input = st.text_input(
@@ -684,9 +666,18 @@ def render_sidebar() -> str:
         label_visibility="hidden",
     )
 
-    # Snapshot dedup sentinels AFTER widget instantiation
+    # Widget launch bridge
+    if "_ns_widget_bridge" not in st.session_state:
+        st.session_state["_ns_widget_bridge"] = ""
+    widget_input = st.text_input(
+        "ns_widget_input",
+        key="_ns_widget_bridge",
+        label_visibility="hidden",
+    )
+
     _last_page      = st.session_state.get("_ns_page_last", "")
     _last_collapsed = st.session_state.get("_ns_collapse_last", "")
+    _last_widget    = st.session_state.get("_ns_widget_last", "")
 
     # ── process bridge values ─────────────────────────────────────────────────
     selected_page = current_page
@@ -707,6 +698,18 @@ def render_sidebar() -> str:
         else:
             st.session_state.sidebar_collapsed = False
             collapsed = False
+
+    # Widget launch bridge
+    widget_val = (widget_input or "").strip()
+    if widget_val == "__launch__" and widget_val != _last_widget:
+        st.session_state["_ns_widget_last"] = widget_val
+        import subprocess, sys
+        from pathlib import Path
+        widget_path = str(Path(__file__).resolve().parents[1] / "floating_widget.py")
+        subprocess.Popen(
+            [sys.executable, widget_path],
+            creationflags=subprocess.CREATE_NEW_CONSOLE if sys.platform == "win32" else 0,
+        )
 
     # ── inject CSS into parent document ──────────────────────────────────────
     # st.markdown allows <style> tags — this is the correct injection path
