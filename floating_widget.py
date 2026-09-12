@@ -1,7 +1,7 @@
 """
 floating_widget.py
 ------------------
-Always-on-top floating fatigue monitor for NeuroSense AI.
+Always-on-top floating fatigue monitor for NeuroSense.
 Reads latest prediction from SQLite (written by realtime_app.py).
 Launch: python floating_widget.py
 """
@@ -96,6 +96,7 @@ class FloatingWidget:
         self._drag_y     = 0
         self._last_data  = None
         self._last_level = 0
+        self._closing    = False  # guard: suppress pill click after × is pressed
 
         self._build_window()
         self._build_pill()
@@ -170,7 +171,7 @@ class FloatingWidget:
         hdr.pack(fill="x", padx=14, pady=(12, 0))
 
         tk.Label(
-            hdr, text="🧠 NeuroSense AI", font=("Segoe UI", 10, "bold"),
+            hdr, text="🧠 NeuroSense", font=("Segoe UI", 10, "bold"),
             bg=BG_EXPANDED, fg=TEXT_MAIN,
         ).pack(side="left")
 
@@ -178,7 +179,7 @@ class FloatingWidget:
             hdr, text="×", font=("Segoe UI", 12, "bold"),
             bg=BG_EXPANDED, fg=TEXT_MUTED, bd=0, relief="flat",
             activebackground=BG_EXPANDED, activeforeground=TEXT_MAIN,
-            cursor="hand2", command=self._collapse,
+            cursor="hand2", command=self._on_close_click,
         ).pack(side="right")
 
         # Divider
@@ -270,12 +271,26 @@ class FloatingWidget:
         h = self.card.winfo_reqheight()
         self.root.geometry(f"{w}x{h}+{self.root.winfo_x()}+{self.root.winfo_y()}")
 
+    def _on_close_click(self):
+        """Called by the × button. Sets a guard so the pill's ButtonRelease-1
+        handler does not immediately re-open the card on the same mouse event."""
+        self._closing = True
+        self._collapse()
+        # Clear the guard after tkinter has finished processing this event cycle.
+        self.root.after(50, self._clear_closing)
+
+    def _clear_closing(self):
+        self._closing = False
+
     def _collapse(self):
         self._expanded = False
         self._show_pill()
 
     # ── Click to expand ───────────────────────────────────────────────────────
     def _on_pill_click(self, event):
+        # Ignore the release that belongs to the × button close action.
+        if self._closing:
+            return
         # Only expand if the mouse didn't move (not a drag)
         if abs(event.x_root - self._drag_x) < 5 and abs(event.y_root - self._drag_y) < 5:
             self._expanded = not self._expanded

@@ -8,7 +8,7 @@ Launch: streamlit run realtime_app.py
 import streamlit as st
 
 st.set_page_config(
-    page_title="NeuroSense AI — Mental Fatigue Detection",
+    page_title="NeuroSense — Mental Fatigue Detection",
     page_icon="🧠",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -227,7 +227,7 @@ def main():
     inject_css()
 
     if not st.session_state.initialized:
-        with st.spinner("🧠 Initializing NeuroSense AI..."):
+        with st.spinner("🧠 Initializing NeuroSense..."):
             if not _initialize():
                 return
         st.rerun()

@@ -1,7 +1,7 @@
 """
 ui/sidebar.py
 -------------
-Collapsible enterprise sidebar for NeuroSense AI.
+Collapsible enterprise sidebar for NeuroSense.
 
 Architecture (why the previous version broke)
 ----------------------------------------------
@@ -484,13 +484,13 @@ def _build_sidebar_html(current_page: str, collapsed: bool) -> str:
   <div class="ns-logo">
     <div class="ns-logo-icon">{logo_svg}</div>
     <div class="ns-brand">
-      <div class="ns-brand-name">NeuroSense AI</div>
+      <div class="ns-brand-name">NeuroSense</div>
       <div class="ns-brand-sub">Mental Fatigue Detection</div>
     </div>
   </div>
   <div id="ns-nav">{nav_html}</div>
   <div class="ns-footer">
-    <div class="ns-footer-row">NeuroSense AI v2.0</div>
+    <div class="ns-footer-row">NeuroSense v2.0</div>
     <div class="ns-footer-row">Powered by XGBoost</div>
     <div class="ns-footer-row">Local AI · SQLite</div>
     <div style="margin-top:.6rem">
@@ -514,8 +514,19 @@ def _build_sidebar_html(current_page: str, collapsed: bool) -> str:
 def _build_injector_js(current_page: str, collapsed: bool) -> str:
     """
     Build the JavaScript that runs inside the hidden iframe.
-    It injects the sidebar HTML + CSS into window.parent.document,
-    then sets up all event handlers on the parent document.
+
+    SINGLETON STRATEGY
+    ------------------
+    On every Streamlit rerun a new iframe is created.  Multiple iframes
+    can be alive simultaneously, so we must never let more than one of
+    them touch the DOM at the same time.
+
+    1. A mutex flag ``window.parent.__ns_injecting`` prevents concurrent
+       injections from racing against each other.
+    2. If ``#ns-sidebar`` already exists we skip the full DOM rebuild and
+       only update the active nav item + collapsed state in-place.
+    3. A defensive cleanup removes any duplicate ``#ns-sidebar`` elements
+       that somehow slipped through (keeps only the first one).
     """
     sidebar_html = _build_sidebar_html(current_page, collapsed)
     sidebar_html_escaped = (
@@ -525,6 +536,7 @@ def _build_injector_js(current_page: str, collapsed: bool) -> str:
         .replace("${", "\\${")
     )
     collapsed_js = "true" if collapsed else "false"
+    active_page_js = current_page.replace("'", "\\'")
 
     return f"""
 <!DOCTYPE html>
@@ -536,19 +548,7 @@ def _build_injector_js(current_page: str, collapsed: bool) -> str:
   var P = window.parent;
   var D = P.document;
 
-  ['ns-sidebar','ns-toggle','ns-overlay'].forEach(function(id) {{
-    var el = D.getElementById(id);
-    if (el) el.remove();
-  }});
-
-  var tmp = D.createElement('div');
-  tmp.innerHTML = `{sidebar_html_escaped}`;
-  while (tmp.firstChild) D.body.appendChild(tmp.firstChild);
-
-  var isCollapsed = {collapsed_js};
-  if (isCollapsed) D.body.classList.add('ns-collapsed');
-  else D.body.classList.remove('ns-collapsed');
-
+  // ── shared helpers (idempotent — safe to redefine on every rerun) ──────
   function findBridgeInput(ariaLabel) {{
     var inputs = D.querySelectorAll('input[type="text"]');
     for (var i = 0; i < inputs.length; i++) {{
@@ -571,6 +571,7 @@ def _build_injector_js(current_page: str, collapsed: bool) -> str:
     if (maxTries > 0) setTimeout(function() {{ writeToBridge(ariaLabel, value, maxTries - 1); }}, 100);
   }}
 
+  // Always (re)define these on the parent so the latest iframe owns them.
   P.nsNav = function(page) {{
     D.querySelectorAll('.ns-item').forEach(function(el) {{
       el.classList.remove('ns-active');
@@ -615,6 +616,48 @@ def _build_injector_js(current_page: str, collapsed: bool) -> str:
   hideWidgets();
   setTimeout(hideWidgets, 200);
   setTimeout(hideWidgets, 600);
+
+  // ── Step 8: defensive duplicate cleanup ────────────────────────────────
+  // Remove any extra #ns-sidebar / #ns-toggle / #ns-overlay beyond the first.
+  ['ns-sidebar', 'ns-toggle', 'ns-overlay'].forEach(function(id) {{
+    var all = D.querySelectorAll('#' + id);
+    for (var i = 1; i < all.length; i++) all[i].remove();
+  }});
+
+  // ── Singleton guard: skip full rebuild if sidebar already exists ────────
+  var existingSidebar = D.getElementById('ns-sidebar');
+  if (existingSidebar) {{
+    // Sidebar is already in the DOM — only update active item + collapsed state.
+    var isCollapsed = {collapsed_js};
+    if (isCollapsed) {{
+      existingSidebar.classList.add('ns-collapsed');
+      D.body.classList.add('ns-collapsed');
+    }} else {{
+      existingSidebar.classList.remove('ns-collapsed');
+      D.body.classList.remove('ns-collapsed');
+    }}
+    // Update active nav item in-place.
+    D.querySelectorAll('.ns-item').forEach(function(el) {{
+      el.classList.remove('ns-active');
+      if (el.getAttribute('onclick') === "nsNav('{active_page_js}')") el.classList.add('ns-active');
+    }});
+    return; // ← do NOT re-inject; singleton preserved
+  }}
+
+  // ── Mutex: prevent concurrent injections from racing ───────────────────
+  if (P.__ns_injecting) return;
+  P.__ns_injecting = true;
+
+  // ── First-time full injection ───────────────────────────────────────────
+  var tmp = D.createElement('div');
+  tmp.innerHTML = `{sidebar_html_escaped}`;
+  while (tmp.firstChild) D.body.appendChild(tmp.firstChild);
+
+  var isCollapsed = {collapsed_js};
+  if (isCollapsed) D.body.classList.add('ns-collapsed');
+  else D.body.classList.remove('ns-collapsed');
+
+  P.__ns_injecting = false;
 
 }})();
 </script>
@@ -666,7 +709,7 @@ def render_sidebar() -> str:
         label_visibility="hidden",
     )
 
-    # Widget launch bridge
+    # Widget launch bridge — read-only after instantiation, never mutated
     if "_ns_widget_bridge" not in st.session_state:
         st.session_state["_ns_widget_bridge"] = ""
     widget_input = st.text_input(
@@ -675,9 +718,12 @@ def render_sidebar() -> str:
         label_visibility="hidden",
     )
 
+    # Separate launch counter — NOT a widget key, safe to mutate
+    if "_ns_widget_launch_count" not in st.session_state:
+        st.session_state["_ns_widget_launch_count"] = 0
+
     _last_page      = st.session_state.get("_ns_page_last", "")
     _last_collapsed = st.session_state.get("_ns_collapse_last", "")
-    _last_widget    = st.session_state.get("_ns_widget_last", "")
 
     # ── process bridge values ─────────────────────────────────────────────────
     selected_page = current_page
@@ -699,23 +745,23 @@ def render_sidebar() -> str:
             st.session_state.sidebar_collapsed = False
             collapsed = False
 
-    # Widget launch bridge
+    # Widget launch bridge — use counter to detect new clicks, never mutate widget key
     widget_val = (widget_input or "").strip()
-    if widget_val == "__launch__" and widget_val != _last_widget:
-        st.session_state["_ns_widget_last"] = widget_val
+    if widget_val == "__launch__" and st.session_state.get("_ns_widget_seen") != "__launch__":
+        # Mark seen so subsequent reruns (while bridge still holds "__launch__") don't re-fire
+        st.session_state["_ns_widget_seen"] = "__launch__"
         import subprocess, sys
         from pathlib import Path
-        widget_path = str(Path(__file__).resolve().parents[1] / "floating_widget.py")
-        # Singleton guard: only spawn if no widget process is alive
         existing = st.session_state.get("_widget_proc")
         if existing is None or existing.poll() is not None:
+            widget_path = str(Path(__file__).resolve().parents[1] / "floating_widget.py")
             st.session_state["_widget_proc"] = subprocess.Popen(
                 [sys.executable, widget_path],
                 creationflags=subprocess.CREATE_NEW_CONSOLE if sys.platform == "win32" else 0,
             )
-        # Reset bridge so repeated reruns don't re-trigger
-        st.session_state["_ns_widget_bridge"] = ""
-        st.session_state["_ns_widget_last"] = ""
+    elif widget_val == "":
+        # Bridge reset to empty — clear seen so next click fires again
+        st.session_state["_ns_widget_seen"] = ""
 
     # ── inject CSS into parent document ──────────────────────────────────────
     # st.markdown allows <style> tags — this is the correct injection path

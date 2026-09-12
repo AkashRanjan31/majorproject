@@ -25,7 +25,7 @@ def render_header(session_start: datetime, prediction_count: int, is_monitoring:
     st.markdown(f"""
     <div class="hdr">
       <div>
-        <div class="hdr-title">🧠 AI-Based Mental Fatigue Detection System</div>
+        <div class="hdr-title">🧠 Mental Fatigue Detection System</div>
         <div class="hdr-sub">Real-Time Keyboard &amp; Mouse Monitoring &nbsp;·&nbsp;
           XGBoost Classifier &nbsp;·&nbsp; SHAP Explainability &nbsp;·&nbsp; SQLite</div>
       </div>
