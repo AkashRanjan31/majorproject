@@ -8,13 +8,17 @@ import sys
 from pathlib import Path
 
 import joblib
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
+try:
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import matplotlib.patches as mpatches
+    import seaborn as sns
+    _MPL_OK = True
+except Exception:
+    _MPL_OK = False
 import numpy as np
 import pandas as pd
-import seaborn as sns
 from sklearn.metrics import (
     classification_report, confusion_matrix,
     precision_recall_curve, roc_auc_score, roc_curve,
@@ -44,6 +48,8 @@ _STYLE = {"figure.facecolor": "white", "axes.facecolor": "#f8f9fa",
 
 
 def _save(fig, name: str):
+    if not _MPL_OK or fig is None:
+        return
     PLOTS_DIR.mkdir(parents=True, exist_ok=True)
     path = PLOTS_DIR / name
     fig.savefig(path, dpi=150, bbox_inches="tight")
@@ -53,6 +59,7 @@ def _save(fig, name: str):
 
 # ── 1. Model Comparison Bar Chart ─────────────────────────────────────────────
 def plot_model_comparison(df: pd.DataFrame):
+    if not _MPL_OK: return
     metrics = ["Accuracy", "F1_Score", "ROC_AUC", "CV_Accuracy"]
     with plt.rc_context(_STYLE):
         fig, axes = plt.subplots(2, 2, figsize=(18, 12))
@@ -74,6 +81,7 @@ def plot_model_comparison(df: pd.DataFrame):
 
 # ── 2. Radar / Spider Chart ────────────────────────────────────────────────────
 def plot_radar(df: pd.DataFrame):
+    if not _MPL_OK: return
     metrics = ["Accuracy", "Precision", "Recall", "F1_Score", "ROC_AUC", "CV_Accuracy"]
     top5 = df.head(5)
     angles = np.linspace(0, 2 * np.pi, len(metrics), endpoint=False).tolist()
@@ -96,6 +104,7 @@ def plot_radar(df: pd.DataFrame):
 
 # ── 3. Heatmap of all metrics ──────────────────────────────────────────────────
 def plot_metrics_heatmap(df: pd.DataFrame):
+    if not _MPL_OK: return
     cols = ["Accuracy", "Precision", "Recall", "F1_Score", "ROC_AUC", "CV_Accuracy"]
     heat = df.set_index("Model")[cols]
     with plt.rc_context({"figure.facecolor": "white"}):
@@ -111,6 +120,7 @@ def plot_metrics_heatmap(df: pd.DataFrame):
 
 # ── 4. Training Time vs Accuracy scatter ──────────────────────────────────────
 def plot_time_vs_accuracy(df: pd.DataFrame):
+    if not _MPL_OK: return
     with plt.rc_context(_STYLE):
         fig, ax = plt.subplots(figsize=(11, 7))
         scatter = ax.scatter(df["Train_Time_s"], df["Accuracy"],
@@ -128,6 +138,7 @@ def plot_time_vs_accuracy(df: pd.DataFrame):
 
 # ── 5. Per-model Confusion Matrix ─────────────────────────────────────────────
 def plot_confusion_matrices(models_data: dict, y_test, X_test):
+    if not _MPL_OK: return
     n = len(models_data)
     cols = 4
     rows = (n + cols - 1) // cols
@@ -154,6 +165,7 @@ def plot_confusion_matrices(models_data: dict, y_test, X_test):
 
 # ── 6. Multi-class ROC Curves (top 5 models) ──────────────────────────────────
 def plot_roc_curves(models_data: dict, X_test, y_test, top_n: int = 5):
+    if not _MPL_OK: return
     y_bin = label_binarize(y_test, classes=list(range(N_CLASSES)))
     with plt.rc_context(_STYLE):
         fig, axes = plt.subplots(1, min(top_n, len(models_data)),
@@ -182,6 +194,7 @@ def plot_roc_curves(models_data: dict, X_test, y_test, top_n: int = 5):
 
 # ── 7. Precision-Recall Curves ────────────────────────────────────────────────
 def plot_pr_curves(models_data: dict, X_test, y_test, top_n: int = 5):
+    if not _MPL_OK: return
     y_bin = label_binarize(y_test, classes=list(range(N_CLASSES)))
     with plt.rc_context(_STYLE):
         fig, axes = plt.subplots(1, min(top_n, len(models_data)),
@@ -208,6 +221,7 @@ def plot_pr_curves(models_data: dict, X_test, y_test, top_n: int = 5):
 
 # ── 8. Feature Importance (top 3 tree models) ─────────────────────────────────
 def plot_feature_importance(models_data: dict, feature_names: list, top_n_features: int = 20):
+    if not _MPL_OK: return
     tree_models = {n: m for n, m in models_data.items()
                    if hasattr(m, "feature_importances_")}
     if not tree_models:
@@ -230,6 +244,7 @@ def plot_feature_importance(models_data: dict, feature_names: list, top_n_featur
 
 # ── 9. Cross-validation box plot ──────────────────────────────────────────────
 def plot_cv_boxplot(models_data: dict, X, y):
+    if not _MPL_OK: return
     from sklearn.model_selection import cross_val_score
     with plt.rc_context(_STYLE):
         fig, ax = plt.subplots(figsize=(14, 6))
@@ -251,6 +266,7 @@ def plot_cv_boxplot(models_data: dict, X, y):
 
 # ── 10. Rank leaderboard table ────────────────────────────────────────────────
 def plot_leaderboard(df: pd.DataFrame):
+    if not _MPL_OK: return
     cols = ["Rank", "Model", "Accuracy", "F1_Score", "ROC_AUC", "CV_Accuracy",
             "Train_Time_s", "Model_Size_KB"]
     sub = df[cols].head(14)

@@ -67,6 +67,7 @@
           <hr style="border: none; border-top: 1px solid rgba(99,102,241,0.1); margin: 4px 0;" />
           <a href="#" class="profile-dropdown-item" role="menuitem">&#x1F6AA; Sign Out</a>
         </div>
+      </div>
     </div>
   </nav>
 
@@ -109,7 +110,7 @@
       </div>
       <div class="monitor-stats">
         <span class="monitor-stat-item">
-          &#x23F1;&#xFE0F; <strong id="sessionTimer">00:00</strong> 
+          &#x23F1;&#xFE0F; <strong id="sessionTimer">00:00</strong>
         </span>
         <span class="monitor-stat-item">
           &#x2328;&#xFE0F; Keys: <strong id="keyCount">0</strong>
@@ -118,6 +119,7 @@
           &#x1F5B1;&#xFE0F; Mouse: <strong id="mouseCount">0</strong>
         </span>
       </div>
+    </div>
 
     <!-- Dashboard Grid -->
     <div class="dashboard-grid">
@@ -130,6 +132,7 @@
           <span class="monitoring-badge" id="kbBadge" style="display:none; margin-left: auto;">&#x25CF; Live</span>
         </div>
         <div class="feature-items" id="keyboardFeatures">
+
           <!-- Key Press Count -->
           <div class="feature-item">
             <div class="feature-info">
@@ -138,6 +141,7 @@
                 <div class="feature-label">Key Press Count</div>
                 <span class="feature-desc">Total key presses recorded</span>
               </div>
+            </div>
             <div class="feature-controls">
               <div class="slider-container">
                 <input type="range" class="feature-slider" data-feature="key_press_count" data-min="0" data-max="500" data-step="1" value="60" aria-label="Key Press Count" />
@@ -145,7 +149,9 @@
               <div class="feature-value">
                 <input type="number" class="feature-input" data-feature="key_press_count" min="0" max="500" step="1" value="60" />
                 <div class="feature-unit">count</div>
+              </div>
             </div>
+          </div>
 
           <!-- Key Hold Time -->
           <div class="feature-item">
@@ -155,6 +161,7 @@
                 <div class="feature-label">Key Hold Time</div>
                 <span class="feature-desc">Average key press duration</span>
               </div>
+            </div>
             <div class="feature-controls">
               <div class="slider-container">
                 <input type="range" class="feature-slider" data-feature="key_hold_time" data-min="0" data-max="1" data-step="0.01" value="0.15" aria-label="Key Hold Time" />
@@ -162,7 +169,9 @@
               <div class="feature-value">
                 <input type="number" class="feature-input" data-feature="key_hold_time" min="0" max="1" step="0.01" value="0.15" />
                 <div class="feature-unit">sec</div>
+              </div>
             </div>
+          </div>
 
           <!-- Typing Speed -->
           <div class="feature-item">
@@ -172,6 +181,7 @@
                 <div class="feature-label">Typing Speed</div>
                 <span class="feature-desc">Words per minute</span>
               </div>
+            </div>
             <div class="feature-controls">
               <div class="slider-container">
                 <input type="range" class="feature-slider" data-feature="typing_speed" data-min="0" data-max="120" data-step="1" value="30" aria-label="Typing Speed" />
@@ -179,7 +189,9 @@
               <div class="feature-value">
                 <input type="number" class="feature-input" data-feature="typing_speed" min="0" max="120" step="1" value="30" />
                 <div class="feature-unit">WPM</div>
+              </div>
             </div>
+          </div>
 
           <!-- Error Rate -->
           <div class="feature-item">
@@ -189,6 +201,7 @@
                 <div class="feature-label">Error Rate</div>
                 <span class="feature-desc">Typing error percentage</span>
               </div>
+            </div>
             <div class="feature-controls">
               <div class="slider-container">
                 <input type="range" class="feature-slider" data-feature="error_rate" data-min="0" data-max="1" data-step="0.01" value="0.05" aria-label="Error Rate" />
@@ -196,7 +209,9 @@
               <div class="feature-value">
                 <input type="number" class="feature-input" data-feature="error_rate" min="0" max="1" step="0.01" value="0.05" />
                 <div class="feature-unit">%</div>
+              </div>
             </div>
+          </div>
 
           <!-- Backspace Count -->
           <div class="feature-item">
@@ -206,6 +221,7 @@
                 <div class="feature-label">Backspace Count</div>
                 <span class="feature-desc">Number of corrections</span>
               </div>
+            </div>
             <div class="feature-controls">
               <div class="slider-container">
                 <input type="range" class="feature-slider" data-feature="backspace_count" data-min="0" data-max="100" data-step="1" value="8" aria-label="Backspace Count" />
@@ -213,7 +229,9 @@
               <div class="feature-value">
                 <input type="number" class="feature-input" data-feature="backspace_count" min="0" max="100" step="1" value="8" />
                 <div class="feature-unit">count</div>
+              </div>
             </div>
+          </div>
 
           <!-- Idle Time -->
           <div class="feature-item">
@@ -223,6 +241,7 @@
                 <div class="feature-label">Idle Time</div>
                 <span class="feature-desc">Periods of inactivity</span>
               </div>
+            </div>
             <div class="feature-controls">
               <div class="slider-container">
                 <input type="range" class="feature-slider" data-feature="idle_time" data-min="0" data-max="60" data-step="0.1" value="5" aria-label="Idle Time" />
@@ -230,8 +249,12 @@
               <div class="feature-value">
                 <input type="number" class="feature-input" data-feature="idle_time" min="0" max="60" step="0.1" value="5" />
                 <div class="feature-unit">sec</div>
+              </div>
             </div>
+          </div>
+
         </div>
+      </div>
 
       <!-- RIGHT: Mouse Features -->
       <div class="glass-card fade-in-up">
@@ -241,6 +264,7 @@
           <span class="monitoring-badge" id="mouseBadge" style="display:none; margin-left: auto;">&#x25CF; Live</span>
         </div>
         <div class="feature-items" id="mouseFeatures">
+
           <!-- Mouse Click Count -->
           <div class="feature-item">
             <div class="feature-info">
@@ -249,6 +273,7 @@
                 <div class="feature-label">Mouse Click Count</div>
                 <span class="feature-desc">Total clicks recorded</span>
               </div>
+            </div>
             <div class="feature-controls">
               <div class="slider-container">
                 <input type="range" class="feature-slider" data-feature="mouse_click_count" data-min="0" data-max="200" data-step="1" value="15" aria-label="Mouse Click Count" />
@@ -256,7 +281,9 @@
               <div class="feature-value">
                 <input type="number" class="feature-input" data-feature="mouse_click_count" min="0" max="200" step="1" value="15" />
                 <div class="feature-unit">count</div>
+              </div>
             </div>
+          </div>
 
           <!-- Left Click -->
           <div class="feature-item">
@@ -266,6 +293,7 @@
                 <div class="feature-label">Left Click</div>
                 <span class="feature-desc">Left button clicks</span>
               </div>
+            </div>
             <div class="feature-controls">
               <div class="slider-container">
                 <input type="range" class="feature-slider" data-feature="left_click" data-min="0" data-max="150" data-step="1" value="12" aria-label="Left Click" />
@@ -273,7 +301,9 @@
               <div class="feature-value">
                 <input type="number" class="feature-input" data-feature="left_click" min="0" max="150" step="1" value="12" />
                 <div class="feature-unit">count</div>
+              </div>
             </div>
+          </div>
 
           <!-- Right Click -->
           <div class="feature-item">
@@ -283,6 +313,7 @@
                 <div class="feature-label">Right Click</div>
                 <span class="feature-desc">Right button clicks</span>
               </div>
+            </div>
             <div class="feature-controls">
               <div class="slider-container">
                 <input type="range" class="feature-slider" data-feature="right_click" data-min="0" data-max="50" data-step="1" value="2" aria-label="Right Click" />
@@ -290,7 +321,9 @@
               <div class="feature-value">
                 <input type="number" class="feature-input" data-feature="right_click" min="0" max="50" step="1" value="2" />
                 <div class="feature-unit">count</div>
+              </div>
             </div>
+          </div>
 
           <!-- Double Click -->
           <div class="feature-item">
@@ -300,6 +333,7 @@
                 <div class="feature-label">Double Click</div>
                 <span class="feature-desc">Double-click events</span>
               </div>
+            </div>
             <div class="feature-controls">
               <div class="slider-container">
                 <input type="range" class="feature-slider" data-feature="double_click" data-min="0" data-max="30" data-step="1" value="0" aria-label="Double Click" />
@@ -307,7 +341,9 @@
               <div class="feature-value">
                 <input type="number" class="feature-input" data-feature="double_click" min="0" max="30" step="1" value="0" />
                 <div class="feature-unit">count</div>
+              </div>
             </div>
+          </div>
 
           <!-- Scroll Count -->
           <div class="feature-item">
@@ -317,6 +353,7 @@
                 <div class="feature-label">Scroll Count</div>
                 <span class="feature-desc">Scroll wheel events</span>
               </div>
+            </div>
             <div class="feature-controls">
               <div class="slider-container">
                 <input type="range" class="feature-slider" data-feature="scroll_count" data-min="0" data-max="50" data-step="1" value="10" aria-label="Scroll Count" />
@@ -324,8 +361,9 @@
               <div class="feature-value">
                 <input type="number" class="feature-input" data-feature="scroll_count" min="0" max="50" step="1" value="10" />
                 <div class="feature-unit">count</div>
+              </div>
             </div>
-        </div>
+          </div>
 
           <!-- Cursor Speed -->
           <div class="feature-item">
@@ -335,6 +373,7 @@
                 <div class="feature-label">Cursor Speed</div>
                 <span class="feature-desc">Pointer velocity</span>
               </div>
+            </div>
             <div class="feature-controls">
               <div class="slider-container">
                 <input type="range" class="feature-slider" data-feature="cursor_speed" data-min="0" data-max="500" data-step="1" value="60" aria-label="Cursor Speed" />
@@ -342,7 +381,9 @@
               <div class="feature-value">
                 <input type="number" class="feature-input" data-feature="cursor_speed" min="0" max="500" step="1" value="60" />
                 <div class="feature-unit">px/s</div>
+              </div>
             </div>
+          </div>
 
           <!-- Cursor Distance -->
           <div class="feature-item">
@@ -352,6 +393,7 @@
                 <div class="feature-label">Cursor Distance</div>
                 <span class="feature-desc">Total pointer travel</span>
               </div>
+            </div>
             <div class="feature-controls">
               <div class="slider-container">
                 <input type="range" class="feature-slider" data-feature="cursor_distance" data-min="0" data-max="100000" data-step="100" value="20000" aria-label="Cursor Distance" />
@@ -359,7 +401,9 @@
               <div class="feature-value">
                 <input type="number" class="feature-input" data-feature="cursor_distance" min="0" max="100000" step="100" value="20000" />
                 <div class="feature-unit">px</div>
+              </div>
             </div>
+          </div>
 
           <!-- Drag Count -->
           <div class="feature-item">
@@ -369,6 +413,7 @@
                 <div class="feature-label">Drag Count</div>
                 <span class="feature-desc">Drag operations</span>
               </div>
+            </div>
             <div class="feature-controls">
               <div class="slider-container">
                 <input type="range" class="feature-slider" data-feature="drag_count" data-min="0" data-max="50" data-step="1" value="5" aria-label="Drag Count" />
@@ -376,7 +421,9 @@
               <div class="feature-value">
                 <input type="number" class="feature-input" data-feature="drag_count" min="0" max="50" step="1" value="5" />
                 <div class="feature-unit">count</div>
+              </div>
             </div>
+          </div>
 
           <!-- Movement Speed -->
           <div class="feature-item">
@@ -386,6 +433,7 @@
                 <div class="feature-label">Movement Speed</div>
                 <span class="feature-desc">Mouse movement velocity</span>
               </div>
+            </div>
             <div class="feature-controls">
               <div class="slider-container">
                 <input type="range" class="feature-slider" data-feature="movement_speed" data-min="0" data-max="500" data-step="1" value="60" aria-label="Movement Speed" />
@@ -393,7 +441,9 @@
               <div class="feature-value">
                 <input type="number" class="feature-input" data-feature="movement_speed" min="0" max="500" step="1" value="60" />
                 <div class="feature-unit">px/s</div>
+              </div>
             </div>
+          </div>
 
           <!-- Idle Mouse Time -->
           <div class="feature-item">
@@ -403,6 +453,7 @@
                 <div class="feature-label">Idle Mouse Time</div>
                 <span class="feature-desc">Mouse inactivity period</span>
               </div>
+            </div>
             <div class="feature-controls">
               <div class="slider-container">
                 <input type="range" class="feature-slider" data-feature="idle_mouse_time" data-min="0" data-max="2000" data-step="10" value="300" aria-label="Idle Mouse Time" />
@@ -410,8 +461,12 @@
               <div class="feature-value">
                 <input type="number" class="feature-input" data-feature="idle_mouse_time" min="0" max="2000" step="10" value="300" />
                 <div class="feature-unit">ms</div>
+              </div>
             </div>
+          </div>
+
         </div>
+      </div>
 
     </div>
 
@@ -434,27 +489,34 @@
             <button class="btn-export" id="exportJsonBtn">&#x1F4E4; Export JSON</button>
             <button class="btn-export" id="exportCsvBtn">&#x1F4E4; Export CSV</button>
           </div>
+        </div>
 
         <!-- Report Stats Grid -->
         <div class="report-stats-grid" id="reportStatsGrid">
           <div class="report-stat-card">
             <div class="report-stat-label">Session Duration</div>
             <div class="report-stat-value" id="reportDuration">0s</div>
+          </div>
           <div class="report-stat-card">
             <div class="report-stat-label">Total Predictions</div>
             <div class="report-stat-value" id="reportPredictions">0</div>
+          </div>
           <div class="report-stat-card">
             <div class="report-stat-label">Dominant Prediction</div>
             <div class="report-stat-value" id="reportDominant">-</div>
+          </div>
           <div class="report-stat-card">
             <div class="report-stat-label">Total Key Presses</div>
             <div class="report-stat-value" id="reportKeys">0</div>
+          </div>
           <div class="report-stat-card">
             <div class="report-stat-label">Mouse Clicks</div>
             <div class="report-stat-value" id="reportClicks">0</div>
+          </div>
           <div class="report-stat-card">
             <div class="report-stat-label">Avg Typing Speed</div>
             <div class="report-stat-value" id="reportTyping">0 WPM</div>
+          </div>
         </div>
 
         <!-- Charts Grid -->
@@ -464,11 +526,13 @@
             <div class="chart-container">
               <canvas id="trendChart"></canvas>
             </div>
+          </div>
           <div style="text-align: center;">
             <h4 style="margin-bottom: 12px; color: var(--text-secondary);">Confidence Score</h4>
             <div class="gauge-container">
               <canvas id="confidenceGauge"></canvas>
             </div>
+          </div>
         </div>
 
         <!-- Recommendation -->
@@ -476,6 +540,8 @@
           <h4 style="margin-bottom: 8px;">&#x1F4A1; Session Recommendation</h4>
           <p id="reportRecommendation" style="color: var(--text-muted); line-height: 1.6;">Complete a monitoring session to get a recommendation.</p>
         </div>
+
+      </div>
     </div>
 
     <!-- Summary Cards -->
@@ -484,21 +550,25 @@
         <div class="summary-icon">&#x2328;&#xFE0F;</div>
         <div class="summary-value"><span class="count-up" id="summaryTyping">30</span> <small style="font-size:1rem;font-weight:500;color:var(--text-muted);">WPM</small></div>
         <div class="summary-label">Typing Speed</div>
+      </div>
 
       <div class="glass-card summary-card fade-in-up">
         <div class="summary-icon">&#x1F5B1;&#xFE0F;</div>
         <div class="summary-value"><span class="count-up" id="summaryClicks">15</span> <small style="font-size:1rem;font-weight:500;color:var(--text-muted);">Total</small></div>
         <div class="summary-label">Mouse Clicks</div>
+      </div>
 
       <div class="glass-card summary-card fade-in-up">
         <div class="summary-icon">&#x26A1;</div>
         <div class="summary-value" id="summaryActivity">Normal</div>
         <div class="summary-label">Activity Level</div>
+      </div>
 
       <div class="glass-card summary-card fade-in-up">
         <div class="summary-icon">&#x1F9E0;</div>
         <div class="summary-value" id="summaryFatigue">Low</div>
         <div class="summary-label">Fatigue Level</div>
+      </div>
     </div>
 
     <!-- Footer -->

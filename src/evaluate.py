@@ -8,9 +8,7 @@ from pathlib import Path
 import sys
 
 import joblib
-import matplotlib.pyplot as plt
 import pandas as pd
-import seaborn as sns
 from sklearn.metrics import (
     accuracy_score,
     classification_report,
@@ -22,6 +20,13 @@ from sklearn.metrics import (
     roc_curve,
 )
 from sklearn.model_selection import train_test_split
+
+try:
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    _MPL_OK = True
+except Exception:
+    _MPL_OK = False
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
@@ -79,6 +84,9 @@ def evaluate_model() -> None:
 
 def save_confusion_matrix(y_test, y_pred, labels: list[int], names: list[str]) -> None:
     """Save the confusion matrix graph."""
+    if not _MPL_OK:
+        print("Skipping confusion matrix plot (matplotlib blocked).")
+        return
     matrix = confusion_matrix(y_test, y_pred, labels=labels)
     plt.figure(figsize=(7, 5))
     sns.heatmap(matrix, annot=True, fmt="d", cmap="Blues", xticklabels=names, yticklabels=names)
@@ -93,6 +101,9 @@ def save_confusion_matrix(y_test, y_pred, labels: list[int], names: list[str]) -
 
 def save_binary_roc_curve(y_test, positive_probabilities) -> None:
     """Save ROC curve only for binary classification."""
+    if not _MPL_OK:
+        print("Skipping ROC curve plot (matplotlib blocked).")
+        return
     fpr, tpr, _ = roc_curve(y_test, positive_probabilities)
     auc_score = roc_auc_score(y_test, positive_probabilities)
 
@@ -111,6 +122,9 @@ def save_binary_roc_curve(y_test, positive_probabilities) -> None:
 
 def save_feature_importance(model, feature_names: list[str]) -> None:
     """Save a feature importance bar chart."""
+    if not _MPL_OK:
+        print("Skipping feature importance plot (matplotlib blocked).")
+        return
     importance = pd.Series(model.feature_importances_, index=feature_names).sort_values(ascending=False)
 
     plt.figure(figsize=(10, 6))

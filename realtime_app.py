@@ -26,6 +26,7 @@ from pathlib import Path
 from src.config import get_config
 from src.logger import setup_logger
 from src.monitor import ActivityMonitor
+from src.break_reminder import BreakReminderEngine
 from src.feature_extraction import FeatureExtractor, FEATURE_ORDER, TemporalFeatureBuffer
 from src.realtime_predict import FatiguePredictor
 from src.ensemble_predict import EnsemblePredictor
@@ -90,6 +91,7 @@ def _init_state():
         "session_id": generate_session_id(),
         "pred_sequence": 0,
         "sidebar_collapsed": False,
+        "break_engine": None,
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -118,6 +120,8 @@ def _initialize():
         monitor = ActivityMonitor(window_size=st.session_state.window_size)
         monitor.start()
         st.session_state.monitor = monitor
+        if st.session_state.break_engine is None:
+            st.session_state.break_engine = BreakReminderEngine(config)
         st.session_state.initialized = True
         st.session_state.session_start = datetime.now()
         logger.info("Dashboard initialized — listeners started.")
@@ -205,6 +209,11 @@ def _get_prediction():
         )
         save_prediction(pred_record)
 
+        # ── Break reminder engine update ────────────────────────────────
+        engine = st.session_state.get("break_engine")
+        if engine:
+            engine.update(raw, prediction["level"])
+
         st.session_state.prediction_count += 1
         st.session_state.last_prediction = prediction
         st.session_state.last_features = features
@@ -265,6 +274,7 @@ def main():
             break_count=st.session_state.break_count,
             is_monitoring=st.session_state.initialized,
             model_loaded=st.session_state.predictor is not None,
+            break_engine=st.session_state.get("break_engine"),
         )
     elif page == "Live Monitor":
         render_live_monitor_page(

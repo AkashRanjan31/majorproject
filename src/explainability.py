@@ -9,11 +9,16 @@ import sys
 from pathlib import Path
 
 import joblib
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
+try:
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    _MPL_OK = True
+except Exception:
+    _MPL_OK = False
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
@@ -32,6 +37,8 @@ CLASS_NAMES = config.CLASS_NAMES
 
 
 def _save(fig, name: str):
+    if not _MPL_OK or fig is None:
+        return
     PLOTS_DIR.mkdir(parents=True, exist_ok=True)
     path = PLOTS_DIR / name
     fig.savefig(path, dpi=150, bbox_inches="tight")

@@ -55,6 +55,13 @@ class EnsemblePredictor:
             if not path.exists():
                 logger.info(f"Ensemble: {name}.pkl not found — skipping")
                 continue
+            # Pre-check: LightGBM loads a native DLL that may be blocked by policy
+            if name == "LightGBM":
+                try:
+                    import lightgbm  # noqa: F401
+                except Exception as e:
+                    logger.warning(f"Ensemble: LightGBM blocked by system policy — skipping ({e})")
+                    continue
             try:
                 saved = joblib.load(path)
                 model = saved["model"] if isinstance(saved, dict) else saved

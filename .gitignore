@@ -15,7 +15,7 @@ env/
 notebooks/.ipynb_checkpoints/
 
 # Model binaries (large files)
-models/*.pkl
+# models/*.pkl  <- removed so best_model.pkl is pushed to GitHub
 backup_pre_audit/*.pkl
 backups/*.pkl
 

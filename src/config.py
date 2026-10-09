@@ -57,6 +57,14 @@ class AppConfig:
     BASELINE_WINDOW_COUNT: int = 10   # windows needed to build baseline
     BASELINE_PATH: str = str(PROJECT_ROOT / "models" / "user_baseline.pkl")
 
+    # Break reminder
+    WORK_REMINDER_HOURS: int       = 6
+    BREAK_IDLE_MINUTES: int        = 10
+    DEFAULT_BREAK_MINUTES: int     = 10
+    EXTENDED_BREAK_MINUTES: int    = 30
+    BREAK_SNOOZE_MINUTES: int      = 30
+    MAX_REMINDERS_PER_SESSION: int = 2
+
     # Model metadata
     MODEL_NAME: str = "XGBoost"
     MODEL_VERSION: str = "1.0.0"

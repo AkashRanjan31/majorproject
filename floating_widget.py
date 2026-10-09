@@ -13,6 +13,7 @@ import sys
 import threading
 import time
 import tkinter as tk
+from tkinter import messagebox
 from pathlib import Path
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
@@ -20,6 +21,14 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 DB_PATH      = PROJECT_ROOT / "database" / "fatigue_data.db"
 POLL_INTERVAL_MS = 3000   # poll DB every 3 seconds
 DASHBOARD_URL    = "http://localhost:8501"
+
+# Break reminder state (widget-local, not shared with Streamlit)
+_BREAK_REMINDER_HOURS    = 6
+_BREAK_IDLE_MINUTES      = 10
+_widget_work_start       = time.time()
+_widget_last_activity    = time.time()
+_widget_reminder_shown   = False
+_widget_lock             = threading.Lock()
 
 # ── Fatigue config (mirrors realtime_predict.py + styles.py) ─────────────────
 _FATIGUE = {
@@ -40,6 +49,51 @@ BORDER_CLR  = "#1e293b"
 
 
 # ── DB helper ─────────────────────────────────────────────────────────────────
+def _update_widget_activity(data: dict | None) -> None:
+    """Update widget-local work timer from latest DB row."""
+    global _widget_last_activity, _widget_work_start, _widget_reminder_shown
+    if data is None:
+        return
+    feats = data.get("features", {})
+    kb_idle = float(feats.get("idle_time", 9999))
+    ms_idle = float(feats.get("idle_mouse_time", 9999))
+    idle    = min(kb_idle, ms_idle)
+    now     = time.time()
+    with _widget_lock:
+        if idle < _BREAK_IDLE_MINUTES * 60:
+            _widget_last_activity = now
+        # Detect meaningful break → reset
+        if (now - _widget_last_activity) >= _BREAK_IDLE_MINUTES * 60:
+            _widget_work_start     = now
+            _widget_reminder_shown = False
+
+
+def _check_six_hour_reminder(root: tk.Tk) -> None:
+    """Show a one-time tkinter dialog when 6 hours of continuous work is reached."""
+    global _widget_reminder_shown
+    with _widget_lock:
+        if _widget_reminder_shown:
+            return
+        elapsed = time.time() - _widget_work_start
+        if elapsed < _BREAK_REMINDER_HOURS * 3600:
+            return
+        _widget_reminder_shown = True
+
+    def _show():
+        result = messagebox.askquestion(
+            "🧠 NeuroSense — Break Reminder",
+            "You've worked continuously for 6 hours.\n\n"
+            "💡 Time for a short break — Recommended: 10 minutes.\n\n"
+            "Start your break now?",
+            icon="warning",
+        )
+        if result == "yes":
+            import webbrowser
+            webbrowser.open(DASHBOARD_URL)
+
+    root.after(0, _show)
+
+
 def _fetch_latest() -> dict | None:
     """Return the most recent prediction row from SQLite, or None."""
     if not DB_PATH.exists():
@@ -375,6 +429,8 @@ class FloatingWidget:
     def _poll(self):
         try:
             data = _fetch_latest()
+            _update_widget_activity(data)
+            _check_six_hour_reminder(self.root)
             self._apply(data)
         except Exception:
             pass

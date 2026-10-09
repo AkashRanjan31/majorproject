@@ -16,6 +16,117 @@ from ui.charts import (
 )
 
 
+# ── Break Reminder helpers ────────────────────────────────────────────────────
+
+def _break_reminder_banner(engine, prediction):
+    """Show 6-hour / AI-fatigue reminder banner with Start Break / Later buttons."""
+    show, reason = engine.should_show_reminder()
+    data = engine.get_dashboard_data()
+
+    # Always render the Continuous Work Session panel
+    _work_session_panel(data)
+
+    if not show:
+        return
+
+    fatigue_level = prediction.get("level", 0) if prediction else 0
+    title, desc, severity = engine.get_break_recommendation(fatigue_level)
+
+    if reason == "six_hour":
+        header = "⏰ You've worked continuously for 6 hours"
+        color  = "#f59e0b"
+    else:
+        header = "🔴 High Fatigue Detected by AI"
+        color  = "#ef4444"
+
+    st.markdown(f"""
+    <div style="background:rgba(239,68,68,.12);border:1px solid {color};
+                border-radius:16px;padding:1.2rem 1.5rem;margin-bottom:.5rem;">
+      <div style="font-size:1rem;font-weight:700;color:{color};margin-bottom:.3rem;">
+        {header}
+      </div>
+      <div style="font-size:.85rem;color:#F8FAFC;margin-bottom:.8rem;">
+        {title} — {desc}
+      </div>
+      <div style="font-size:.75rem;color:#94A3B8;">Recommended: 10 minutes away from screen</div>
+    </div>""", unsafe_allow_html=True)
+
+    col_start, col_ext, col_later = st.columns([2, 2, 1])
+    with col_start:
+        if st.button("☕ Start 10-Min Break", key="brk_start", use_container_width=True):
+            engine.start_break(extended=False)
+            st.session_state["break_countdown_active"] = True
+            st.rerun()
+    with col_ext:
+        if st.button("🛌 Start 30-Min Break", key="brk_ext", use_container_width=True):
+            engine.start_break(extended=True)
+            st.session_state["break_countdown_active"] = True
+            st.rerun()
+    with col_later:
+        if st.button("Later", key="brk_later"):
+            engine.snooze()
+            st.rerun()
+
+    # Break countdown
+    if st.session_state.get("break_countdown_active") and data["state"] == "BREAK_IN_PROGRESS":
+        _break_countdown(engine, data)
+
+
+def _break_countdown(engine, data):
+    """Render the break countdown card."""
+    remaining = data["break_remaining_secs"]
+    m = int(remaining // 60)
+    s = int(remaining % 60)
+
+    if remaining <= 0:
+        engine.complete_break_manually()
+        st.session_state["break_countdown_active"] = False
+        st.success("✅ Break completed! Work timer has been reset.")
+        st.rerun()
+        return
+
+    st.markdown(f"""
+    <div style="background:rgba(34,197,94,.1);border:1px solid #22c55e;
+                border-radius:16px;padding:1.2rem 1.5rem;text-align:center;">
+      <div style="font-size:1rem;font-weight:700;color:#22c55e;margin-bottom:.4rem;">🌿 BREAK TIME</div>
+      <div style="font-size:2.5rem;font-weight:900;color:#F8FAFC;">{m:02d}:{s:02d}</div>
+      <div style="font-size:.8rem;color:#94A3B8;margin-top:.4rem;">
+        Step away from your screen · Relax your eyes and mind
+      </div>
+    </div>""", unsafe_allow_html=True)
+
+    if st.button("⏭ Skip Break", key="brk_skip"):
+        engine.complete_break_manually()
+        st.session_state["break_countdown_active"] = False
+        st.rerun()
+
+
+def _work_session_panel(data):
+    """Continuous Work Session info panel."""
+    st.markdown('<div class="sec">⏱️ Continuous Work Session</div>', unsafe_allow_html=True)
+    triggered = data["reminder_triggered"]
+    state     = data["state"]
+
+    col1, col2, col3, col4, col5 = st.columns(5)
+    items = [
+        ("Continuous Work",    data["continuous_work_hms"],
+         "#ef4444" if data["continuous_work_secs"] >= data["reminder_threshold_secs"] else "#22c55e"),
+        ("Next Reminder",
+         "Triggered" if triggered else data["time_to_reminder_hms"],
+         "#f59e0b" if triggered else "#60a5fa"),
+        ("Last Break",         data["last_break"],         "#94A3B8"),
+        ("Breaks Taken",       str(data["total_breaks"]),  "#a78bfa"),
+        ("Session Status",     data["status"],             "#F8FAFC"),
+    ]
+    for col_obj, (lbl, val, color) in zip([col1, col2, col3, col4, col5], items):
+        with col_obj:
+            st.markdown(f"""
+            <div class="mtile" style="border-left-color:{color};">
+              <div class="mtile-lbl">{lbl}</div>
+              <div class="mtile-val" style="color:{color};font-size:.9rem;">{val}</div>
+            </div>""", unsafe_allow_html=True)
+
+
 def _kpi_cards(prediction, features, session_start):
     c1, c2, c3, c4 = st.columns(4)
 
@@ -356,11 +467,16 @@ def render_dashboard_page(
     prediction, features, history, timeline, events,
     shap_data, baseline_tracker, session_start,
     prediction_count, break_count, is_monitoring, model_loaded,
-    temporal=None,
+    temporal=None, break_engine=None,
 ):
     # ── KPI Cards ──
     _kpi_cards(prediction, features, session_start)
     st.markdown("<div style='height:.5rem'></div>", unsafe_allow_html=True)
+
+    # ── Break Reminder Banner ──
+    if break_engine:
+        _break_reminder_banner(break_engine, prediction)
+        st.markdown("<div style='height:.5rem'></div>", unsafe_allow_html=True)
 
     # ── Row 1: Keyboard | Mouse ──
     col_kb, col_ms = st.columns(2)
